@@ -1,0 +1,623 @@
+[
+    {
+        "id": "b31e94b3819e66a5",
+        "type": "tab",
+        "label": "Monitoreo Sala de Servidores",
+        "disabled": false,
+        "info": "ESP32 -> Mosquitto -> Node-RED -> InfluxDB -> Grafana. DataCenter Andino S.A.C."
+    },
+    {
+        "id": "relay_tab",
+        "type": "tab",
+        "label": "Relay broker publico → Mosquitto local",
+        "disabled": false,
+        "info": "Plan B cuando el bridge nativo de Mosquitto no conecta con el broker publico. Reenvia los mensajes al Mosquitto local."
+    },
+    {
+        "id": "broker_local",
+        "type": "mqtt-broker",
+        "name": "Mosquitto local",
+        "broker": "127.0.0.1",
+        "port": "1883",
+        "clientid": "nodered-sala-servidores",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "influx_cfg",
+        "type": "influxdb",
+        "hostname": "127.0.0.1",
+        "port": "8086",
+        "protocol": "http",
+        "database": "database",
+        "name": "InfluxDB local v2",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://127.0.0.1:8086",
+        "timeout": "10",
+        "rejectUnauthorized": true
+    },
+    {
+        "id": "br_remoto",
+        "type": "mqtt-broker",
+        "name": "Broker publico (HiveMQ)",
+        "broker": "broker.hivemq.com",
+        "port": "1883",
+        "clientid": "nodered-relay-remoto-andino",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "br_local2",
+        "type": "mqtt-broker",
+        "name": "Mosquitto local (relay)",
+        "broker": "127.0.0.1",
+        "port": "1883",
+        "clientid": "nodered-relay-local-andino",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "40d8bb266e3071cc",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "Parametros del sistema",
+        "func": "return msg;",
+        "outputs": 0,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "global.set('config', {\n  sala: 'sala_servidores',\n\n  umbral_advertencia: 28,   // advertencia: >= 28 y < 30\n  umbral_critico: 30,       // critico: >= 30\n\n  temp_min_valida: -40,     // DHT22: -40 a 80 C\n  temp_max_valida: 80,\n  hum_min_valida: 0,\n  hum_max_valida: 100,\n  ldr_max: 4095,            // ADC del ESP32 a 12 bits\n\n  luz_oscuro_max: 15,       // <= 15 %  -> oscuro\n  luz_tenue_max: 50,        // 16-50 %  -> tenue ; > 50 % -> iluminado\n\n  ventana_inicio_h: 8,\n  ventana_fin_h: 18,\n\n  recordatorio_critico_s: 60\n});\nnode.status({ fill: 'blue', shape: 'dot', text: 'umbrales 28/30 C cargados' });\n",
+        "finalize": "",
+        "libs": [],
+        "x": 160,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "55b14591a9ad7e0c",
+        "type": "mqtt in",
+        "z": "b31e94b3819e66a5",
+        "name": "Lecturas",
+        "topic": "datacenter_andinoSAC/sala_servidores/lecturas",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "broker_local",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 140,
+        "wires": [
+            [
+                "6f07e76a830982e8",
+                "ccafcc9aac91c5fa"
+            ]
+        ]
+    },
+    {
+        "id": "d7d3545ada05664c",
+        "type": "mqtt in",
+        "z": "b31e94b3819e66a5",
+        "name": "Estado (LWT)",
+        "topic": "datacenter_andinoSAC/sala_servidores/estado",
+        "qos": "1",
+        "datatype": "utf8",
+        "broker": "broker_local",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 330,
+        "y": 420,
+        "wires": [
+            [
+                "06398d288fa6e92c"
+            ]
+        ]
+    },
+    {
+        "id": "544a403452794db9",
+        "type": "mqtt in",
+        "z": "b31e94b3819e66a5",
+        "name": "Error de sensor",
+        "topic": "datacenter_andinoSAC/sala_servidores/error",
+        "qos": "1",
+        "datatype": "utf8",
+        "broker": "broker_local",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 340,
+        "y": 520,
+        "wires": [
+            [
+                "07680ed87fa21397"
+            ]
+        ]
+    },
+    {
+        "id": "6f07e76a830982e8",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "1. Parsear y validar",
+        "func": "\nconst tLlegada = Date.now();\nconst cfg = global.get('config');\nif (!cfg) { node.error('Parametros no cargados', msg); return null; }\n\nconst c = flow.get('contadores') || { recibidos: 0, validos: 0, invalidos: 0, duplicados: 0, perdidos: 0 };\nc.recibidos++;\n\nconst crudo = String(msg.payload).substring(0, 160);\nconst esNum = (v) => typeof v === 'number' && Number.isFinite(v);\n\nlet d = null;\ntry { d = JSON.parse(msg.payload); } catch (e) { d = null; }\n\nconst errores = [];\nlet dispositivo = 'desconocido';\n\nif (d === null || typeof d !== 'object' || Array.isArray(d)) {\n  errores.push('json_invalido');\n} else {\n  if (typeof d.dispositivo === 'string' && d.dispositivo.length > 0) dispositivo = d.dispositivo;\n  else errores.push('dispositivo_faltante');\n\n  if (!esNum(d.temperatura)) errores.push('temperatura_no_numerica');\n  else if (d.temperatura < cfg.temp_min_valida || d.temperatura > cfg.temp_max_valida) errores.push('temperatura_fuera_de_rango');\n\n  if (!esNum(d.humedad)) errores.push('humedad_no_numerica');\n  else if (d.humedad < cfg.hum_min_valida || d.humedad > cfg.hum_max_valida) errores.push('humedad_fuera_de_rango');\n\n  if (!esNum(d.ldr_raw)) errores.push('ldr_no_numerico');\n  else if (d.ldr_raw < 0 || d.ldr_raw > cfg.ldr_max) errores.push('ldr_fuera_de_rango');\n\n  if (!esNum(d.luz_porcentaje)) errores.push('luz_no_numerica');\n  else if (d.luz_porcentaje < 0 || d.luz_porcentaje > 100) errores.push('luz_fuera_de_rango');\n\n  if (!esNum(d.seq) || d.seq < 0) errores.push('seq_invalido');\n}\n\nif (errores.length > 0) {\n  c.invalidos++;\n  flow.set('contadores', c);\n  node.status({ fill: 'red', shape: 'dot', text: 'invalido: ' + errores[0] + ' (' + c.invalidos + ')' });\n  msg.invalido = { dispositivo: dispositivo, motivo: errores.join(','), crudo: crudo };\n  return [null, msg];\n}\n\nc.validos++;\nflow.set('contadores', c);\nflow.set('ultimo_dispositivo', dispositivo);\n\nlet tsDisp = null, latencia = null;\nif (esNum(d.ts_ms) && d.ts_ms > 1700000000000) {\n  tsDisp = d.ts_ms;\n  const lat = tLlegada - d.ts_ms;\n  if (lat >= -5000 && lat <= 30000) latencia = lat;   // fuera de este rango se considera reloj no confiable\n}\n\nnode.status({ fill: 'green', shape: 'dot', text: 'ok ' + c.validos + ' | inv ' + c.invalidos + (latencia !== null ? ' | lat ' + Math.round(latencia) + ' ms' : '') });\n\nmsg.lectura = {\n  dispositivo: dispositivo,\n  seq: d.seq,\n  temperatura: d.temperatura,\n  humedad: d.humedad,\n  ldr_raw: d.ldr_raw,\n  luz_porcentaje: d.luz_porcentaje,\n  ts_ms: tsDisp,\n  latencia_ms: latencia\n};\nreturn [msg, null];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 140,
+        "wires": [
+            [
+                "8bd3adab2d9ecba8"
+            ],
+            [
+                "5d8c7825b647e113"
+            ]
+        ]
+    },
+    {
+        "id": "8bd3adab2d9ecba8",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "2. Calidad de datos (seq)",
+        "func": "const l = msg.lectura\nconst c = flow.get('contadores') || { recibidos: 0, validos: 0, invalidos: 0, duplicados: 0, perdidos: 0 };\nconst mapa = flow.get('seq_dispositivos') || {};\nconst prev = mapa[l.dispositivo];\n\nconst calidad = { perdidos: 0, tipo: null, seq_anterior: (prev === undefined ? -1 : prev) };\n\nif (prev !== undefined) {\n  if (l.seq === prev) {\n    c.duplicados = (c.duplicados || 0) + 1;\n    flow.set('contadores', c);\n    node.status({ fill: 'yellow', shape: 'ring', text: 'duplicado seq ' + l.seq + ' descartado' });\n    return null;\n  } else if (l.seq > prev + 1) {\n    calidad.perdidos = l.seq - prev - 1;\n    calidad.tipo = 'mensajes_perdidos';\n    c.perdidos = (c.perdidos || 0) + calidad.perdidos;\n  } else if (l.seq < prev) {\n    calidad.tipo = 'reinicio_dispositivo';\n  }\n}\n\nmapa[l.dispositivo] = l.seq;\nflow.set('seq_dispositivos', mapa);\nflow.set('contadores', c);\n\nnode.status({\n  fill: calidad.perdidos > 0 ? 'yellow' : 'green',\n  shape: 'dot',\n  text: 'seq ' + l.seq + ' | perdidos acum. ' + (c.perdidos || 0)\n});\n\nmsg.calidad = calidad;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 140,
+        "wires": [
+            [
+                "86d9e82d1a654e74"
+            ]
+        ]
+    },
+    {
+        "id": "86d9e82d1a654e74",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "3. Clasificar y generar eventos",
+        "func": "\nconst cfg = global.get('config');\nif (!cfg) { node.error('Parametros no cargados', msg); return null; }\n\nconst l = msg.lectura;\nconst q = msg.calidad;\nconst ahora = new Date();\nconst horaLima = (ahora.getUTCHours() - 5 + 24) % 24;   // Lima = UTC-5 (sin horario de verano)\n\n\nlet estadoTemp = 'normal', codTemp = 0;\nif (l.temperatura >= cfg.umbral_critico) { estadoTemp = 'critico'; codTemp = 2; }\nelse if (l.temperatura >= cfg.umbral_advertencia) { estadoTemp = 'advertencia'; codTemp = 1; }\n\nlet estadoLuz = 'iluminado', codLuz = 2;\nif (l.luz_porcentaje <= cfg.luz_oscuro_max) { estadoLuz = 'oscuro'; codLuz = 0; }\nelse if (l.luz_porcentaje <= cfg.luz_tenue_max) { estadoLuz = 'tenue'; codLuz = 1; }\n\nconst fueraVentana = !(horaLima >= cfg.ventana_inicio_h && horaLima < cfg.ventana_fin_h);\n\nconst estados = flow.get('estados') || {};\nconst prev = estados[l.dispositivo] || { temp: 'desconocido', luz_fuera: false, ultimo_recordatorio: 0 };\n\nconst eventos = [];\nconst nuevoEvento = (tipo, severidad, mensaje, extra) => eventos.push(Object.assign({\n  ts: ahora.toISOString(),\n  dispositivo: l.dispositivo,\n  tipo: tipo,\n  severidad: severidad,\n  mensaje: mensaje,\n  temperatura: l.temperatura,\n  luz_porcentaje: l.luz_porcentaje\n}, extra || {}));\n\nconst t = l.temperatura.toFixed(1);\nif (estadoTemp !== prev.temp) {\n  if (estadoTemp === 'critico') {\n    const td = (l.ts_ms !== null) ? (Date.now() - l.ts_ms) : null;\n    const extra = (td !== null && td >= -5000 && td <= 30000) ? { tiempo_deteccion_ms: td } : {};\n    nuevoEvento('temperatura_critica', 'critica', 'Temperatura crítica: ' + t + ' C (umbral crítico: ' + cfg.umbral_critico + ' C)', extra);\n    prev.ultimo_recordatorio = ahora.getTime();\n  } else if (estadoTemp === 'advertencia') {\n    nuevoEvento('temperatura_advertencia', 'advertencia', 'Temperatura en advertencia: ' + t + ' C (umbral: ' + cfg.umbral_advertencia + ' C)');\n  } else if (prev.temp === 'advertencia' || prev.temp === 'critico') {\n    nuevoEvento('temperatura_normalizada', 'info', 'Temperatura normalizada: ' + t + ' C');\n  }\n} else if (estadoTemp === 'critico' && (ahora.getTime() - prev.ultimo_recordatorio) >= cfg.recordatorio_critico_s * 1000) {\n  nuevoEvento('temperatura_critica_persistente', 'critica', 'La condición crítica persiste: ' + t + ' C');\n  prev.ultimo_recordatorio = ahora.getTime();\n}\nprev.temp = estadoTemp;\n\nconst luzFuera = (estadoLuz === 'iluminado' && fueraVentana);\nif (luzFuera && !prev.luz_fuera) {\n  nuevoEvento('iluminacion_fuera_de_ventana', 'info',\n    'Iluminación alta (' + l.luz_porcentaje + ' %) fuera de la ventana de mantenimiento (' +\n    cfg.ventana_inicio_h + ':00-' + cfg.ventana_fin_h + ':00). Es una variable ambiental: no indica presencia de personas.');\n}\nprev.luz_fuera = luzFuera;\n\nestados[l.dispositivo] = prev;\nflow.set('estados', estados);\n\nconst puntos = [];\n\nconst monitoreoPrev = flow.get('monitoreo');\nif (monitoreoPrev !== 'EN_LINEA') {\n  puntos.push({\n    measurement: 'estado_monitoreo',\n    tags: { dispositivo: l.dispositivo, fuente: 'node-red' },\n    fields: { estado_codigo: 2, estado_texto: 'EN_LINEA' },\n    timestamp: ahora\n  });\n  if (monitoreoPrev === 'SIN_DATOS' || monitoreoPrev === 'DESCONECTADO') {\n    nuevoEvento('datos_recuperados', 'info', 'Se reanudó la recepción de lecturas (estado previo: ' + monitoreoPrev + ')');\n  }\n  flow.set('monitoreo', 'EN_LINEA');\n}\n\nconst camposLectura = {\n    temperatura: l.temperatura,\n    humedad: l.humedad,\n    ldr_raw: l.ldr_raw,\n    luz_porcentaje: l.luz_porcentaje,\n    seq: l.seq,\n    perdidos: q.perdidos,\n    estado_temp: estadoTemp,\n    estado_temp_codigo: codTemp,\n    estado_luz: estadoLuz,\n    estado_luz_codigo: codLuz\n};\nif (l.latencia_ms !== null) camposLectura.latencia_ms = l.latencia_ms;\nif (l.ts_ms !== null) camposLectura.ts_dispositivo_ms = l.ts_ms;\npuntos.push({\n  measurement: 'lecturas_sala',\n  tags: { dispositivo: l.dispositivo, sala: cfg.sala },\n  fields: camposLectura,\n  timestamp: ahora\n});\n\nif (q.tipo) {\n  puntos.push({\n    measurement: 'calidad_datos',\n    tags: { dispositivo: l.dispositivo, tipo: q.tipo },\n    fields: { perdidos: q.perdidos, seq: l.seq, seq_anterior: q.seq_anterior },\n    timestamp: ahora\n  });\n}\n\nfor (const e of eventos) {\n  const campos = { mensaje: e.mensaje, temperatura: e.temperatura, luz_porcentaje: e.luz_porcentaje };\n  if (e.tiempo_deteccion_ms !== undefined) campos.tiempo_deteccion_ms = e.tiempo_deteccion_ms;\n  puntos.push({\n    measurement: 'alertas',\n    tags: { dispositivo: e.dispositivo, tipo: e.tipo, severidad: e.severidad },\n    fields: campos,\n    timestamp: ahora\n  });\n}\n\nnode.status({\n  fill: codTemp === 2 ? 'red' : (codTemp === 1 ? 'yellow' : 'green'),\n  shape: 'dot',\n  text: t + ' C ' + estadoTemp + ' | luz ' + estadoLuz\n});\n\nmsg.payload = puntos;\nconst msgsEventos = eventos.map((e) => ({ payload: e }));\nreturn [msg, msgsEventos.length > 0 ? msgsEventos : null];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 870,
+        "y": 140,
+        "wires": [
+            [
+                "afc1e7d4fce5c4cd",
+                "ad4eb65d0f8df3ca"
+            ],
+            [
+                "7a06c4fdb4c8b15e"
+            ]
+        ]
+    },
+    {
+        "id": "5d8c7825b647e113",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "Registrar lectura inválida",
+        "func": "\nconst i = msg.invalido;\nmsg.payload = [{\n  measurement: 'lecturas_invalidas',\n  tags: { dispositivo: i.dispositivo, motivo: i.motivo.split(',')[0] },\n  fields: { detalle: i.motivo, crudo: i.crudo },\n  timestamp: new Date()\n}];\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 220,
+        "wires": [
+            [
+                "afc1e7d4fce5c4cd"
+            ]
+        ]
+    },
+    {
+        "id": "22b273fd1c158dee",
+        "type": "inject",
+        "z": "b31e94b3819e66a5",
+        "name": "Arranque watchdog",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 3,
+        "topic": "",
+        "payload": "arranque",
+        "payloadType": "str",
+        "x": 160,
+        "y": 300,
+        "wires": [
+            [
+                "ccafcc9aac91c5fa"
+            ]
+        ]
+    },
+    {
+        "id": "ccafcc9aac91c5fa",
+        "type": "trigger",
+        "z": "b31e94b3819e66a5",
+        "name": "Watchdog 10 s sin datos",
+        "op1": "",
+        "op2": "timeout",
+        "op1type": "nul",
+        "op2type": "str",
+        "duration": "10",
+        "extend": true,
+        "overrideDelay": false,
+        "units": "s",
+        "reset": "",
+        "bytopic": "all",
+        "topic": "topic",
+        "outputs": 1,
+        "x": 400,
+        "y": 300,
+        "wires": [
+            [
+                "e36259ff4064e1b4"
+            ]
+        ]
+    },
+    {
+        "id": "e36259ff4064e1b4",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "Evento SIN_DATOS",
+        "func": "const monitoreo = flow.get('monitoreo');\nif (monitoreo === 'DESCONECTADO' || monitoreo === 'SIN_DATOS') return null;\n\nconst dispositivo = flow.get('ultimo_dispositivo') || 'esp32-sala01';\nconst ahora = new Date();\nflow.set('monitoreo', 'SIN_DATOS');\n\nconst e = {\n  ts: ahora.toISOString(),\n  dispositivo: dispositivo,\n  tipo: 'sin_datos',\n  severidad: 'advertencia',\n  mensaje: 'No se reciben lecturas desde hace más de 10 s (posible interrupción de la publicación o pérdida de mensajes)'\n};\n\nmsg.payload = [\n  {\n    measurement: 'estado_monitoreo',\n    tags: { dispositivo: dispositivo, fuente: 'watchdog' },\n    fields: { estado_codigo: 1, estado_texto: 'SIN_DATOS' },\n    timestamp: ahora\n  },\n  {\n    measurement: 'alertas',\n    tags: { dispositivo: dispositivo, tipo: e.tipo, severidad: e.severidad },\n    fields: { mensaje: e.mensaje },\n    timestamp: ahora\n  }\n];\n\nnode.status({ fill: 'yellow', shape: 'ring', text: 'SIN_DATOS' });\nreturn [msg, { payload: e }];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 300,
+        "wires": [
+            [
+                "afc1e7d4fce5c4cd"
+            ],
+            [
+                "7a06c4fdb4c8b15e"
+            ]
+        ]
+    },
+    {
+        "id": "06398d288fa6e92c",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "Procesar estado LWT",
+        "func": "const estado = String(msg.payload).trim().toLowerCase();\nconst dispositivo = flow.get('ultimo_dispositivo') || 'esp32-sala01';\nconst ahora = new Date();\n\nif (estado === 'offline') {\n  if (flow.get('monitoreo') === 'DESCONECTADO') return null;\n  flow.set('monitoreo', 'DESCONECTADO');\n  const e = {\n    ts: ahora.toISOString(), dispositivo: dispositivo, tipo: 'dispositivo_offline', severidad: 'advertencia',\n    mensaje: 'El broker publicó el Last Will: el ESP32 se desconectó.'\n  };\n  msg.payload = [\n    {\n      measurement: 'estado_monitoreo',\n      tags: { dispositivo: dispositivo, fuente: 'lwt' },\n      fields: { estado_codigo: 0, estado_texto: 'DESCONECTADO' },\n      timestamp: ahora\n    },\n    {\n      measurement: 'alertas',\n      tags: { dispositivo: dispositivo, tipo: e.tipo, severidad: e.severidad },\n      fields: { mensaje: e.mensaje },\n      timestamp: ahora\n    }\n  ];\n  node.status({ fill: 'red', shape: 'dot', text: 'ESP32 offline' });\n  return [msg, { payload: e }];\n}\n\nif (estado === 'online') {\n  const e = {\n    ts: ahora.toISOString(), dispositivo: dispositivo, tipo: 'dispositivo_online', severidad: 'info',\n    mensaje: 'El ESP32 se conectó al broker MQTT.'\n  };\n  msg.payload = [{\n    measurement: 'alertas',\n    tags: { dispositivo: dispositivo, tipo: e.tipo, severidad: e.severidad },\n    fields: { mensaje: e.mensaje },\n    timestamp: ahora\n  }];\n  node.status({ fill: 'green', shape: 'dot', text: 'ESP32 online' });\n  return [msg, { payload: e }];\n}\n\nnode.warn('Estado desconocido en el topico estado: ' + estado);\nreturn null;\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 420,
+        "wires": [
+            [
+                "afc1e7d4fce5c4cd"
+            ],
+            [
+                "7a06c4fdb4c8b15e"
+            ]
+        ]
+    },
+    {
+        "id": "07680ed87fa21397",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "Procesar error de sensor",
+        "func": "let d;\ntry { d = JSON.parse(msg.payload); } catch (e) { d = { error: 'payload_no_json' }; }\nif (d === null || typeof d !== 'object') d = { error: 'payload_no_json' };\n\nconst dispositivo = (typeof d.dispositivo === 'string' && d.dispositivo) ? d.dispositivo : 'desconocido';\nconst codigo = (typeof d.error === 'string' && d.error) ? d.error : 'error_desconocido';\nconst ahora = new Date();\n\nconst puntos = [];\npuntos.push({\n  measurement: 'lecturas_invalidas',\n  tags: { dispositivo: dispositivo, motivo: codigo },\n  fields: { detalle: 'reportado_por_dispositivo', crudo: String(msg.payload).substring(0, 160) },\n  timestamp: ahora\n});\n\nconst ult = flow.get('ult_alerta_error') || 0;\nlet salidaEvento = null;\nif (ahora.getTime() - ult >= 30000) {\n  flow.set('ult_alerta_error', ahora.getTime());\n  const e = {\n    ts: ahora.toISOString(), dispositivo: dispositivo, tipo: 'error_sensor', severidad: 'advertencia',\n    mensaje: 'El ESP32 reportó una lectura inválida del sensor (' + codigo + ').'\n  };\n  puntos.push({\n    measurement: 'alertas',\n    tags: { dispositivo: dispositivo, tipo: e.tipo, severidad: e.severidad },\n    fields: { mensaje: e.mensaje },\n    timestamp: ahora\n  });\n  salidaEvento = { payload: e };\n}\n\nnode.status({ fill: 'yellow', shape: 'dot', text: 'error sensor: ' + codigo });\nmsg.payload = puntos;\nreturn [msg, salidaEvento];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 650,
+        "y": 520,
+        "wires": [
+            [
+                "afc1e7d4fce5c4cd"
+            ],
+            [
+                "7a06c4fdb4c8b15e"
+            ]
+        ]
+    },
+    {
+        "id": "afc1e7d4fce5c4cd",
+        "type": "influxdb batch",
+        "z": "b31e94b3819e66a5",
+        "influxdb": "influx_cfg",
+        "precision": "",
+        "retentionPolicy": "",
+        "name": "InfluxDB (escritura en lote)",
+        "database": "",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "DataCenterAndino",
+        "bucket": "sala_servidores",
+        "x": 1440,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "ad4eb65d0f8df3ca",
+        "type": "debug",
+        "z": "b31e94b3819e66a5",
+        "name": "Puntos a InfluxDB",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1390,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "a762ab2ac930bbf4",
+        "type": "catch",
+        "z": "b31e94b3819e66a5",
+        "name": "Errores de InfluxDB",
+        "scope": [
+            "afc1e7d4fce5c4cd"
+        ],
+        "uncaught": false,
+        "x": 350,
+        "y": 620,
+        "wires": [
+            [
+                "0c4e8199dc505faf"
+            ]
+        ]
+    },
+    {
+        "id": "0c4e8199dc505faf",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "Error de escritura InfluxDB",
+        "func": "const ahora = Date.now();\nconst ult = flow.get('ult_error_influx') || 0;\nif (ahora - ult < 30000) return null;\nflow.set('ult_error_influx', ahora);\n\nconst detalle = (msg.error && msg.error.message) ? msg.error.message : 'error desconocido';\nconst http = (msg.influx_error && msg.influx_error.statusCode) ? ' (HTTP ' + msg.influx_error.statusCode + ')' : '';\n\nreturn {\n  payload: {\n    ts: new Date().toISOString(),\n    dispositivo: 'node-red',\n    tipo: 'error_escritura_influxdb',\n    severidad: 'critica',\n    mensaje: 'Fallo al escribir en InfluxDB' + http + ': ' + detalle\n  }\n};\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 620,
+        "wires": [
+            [
+                "7a06c4fdb4c8b15e"
+            ]
+        ]
+    },
+    {
+        "id": "7a06c4fdb4c8b15e",
+        "type": "function",
+        "z": "b31e94b3819e66a5",
+        "name": "Formatear alerta",
+        "func": "const e = msg.payload;\nconst ts = new Date(e.ts || Date.now()).toLocaleString('sv-SE', { timeZone: 'America/Lima' });\nconst linea = ts + ' [' + String(e.severidad).toUpperCase() + '] ' + e.tipo +\n              ' | dispositivo=' + e.dispositivo + ' | ' + e.mensaje +\n              (e.tiempo_deteccion_ms !== undefined ? ' | deteccion=' + Math.round(e.tiempo_deteccion_ms) + ' ms' : '');\n\nnode.status({\n  fill: e.severidad === 'critica' ? 'red' : (e.severidad === 'advertencia' ? 'yellow' : 'blue'),\n  shape: 'dot',\n  text: e.tipo\n});\n\nreturn [{ payload: e }, { payload: linea }];\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1400,
+        "y": 540,
+        "wires": [
+            [
+                "3fc33a1e7078ce7b",
+                "1eaef0f7a1170650"
+            ],
+            [
+                "3e6885e06c51dcca"
+            ]
+        ]
+    },
+    {
+        "id": "3fc33a1e7078ce7b",
+        "type": "mqtt out",
+        "z": "b31e94b3819e66a5",
+        "name": "Publicar alerta",
+        "topic": "datacenter_andinoSAC/sala_servidores/alertas",
+        "qos": "1",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "broker_local",
+        "x": 1660,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "1eaef0f7a1170650",
+        "type": "debug",
+        "z": "b31e94b3819e66a5",
+        "name": "ALERTAS",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "payload.tipo",
+        "statusType": "msg",
+        "x": 1640,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "3e6885e06c51dcca",
+        "type": "file",
+        "z": "b31e94b3819e66a5",
+        "name": "alertas.log",
+        "filename": "C:/proyecto_iot/logs/alertas.log",
+        "filenameType": "str",
+        "appendNewline": true,
+        "createDir": true,
+        "overwriteFile": "false",
+        "encoding": "none",
+        "x": 1650,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "rl_c",
+        "type": "comment",
+        "z": "relay_tab",
+        "name": "Relay: suscribe al broker publico y republica en el Mosquitto local (tópico, QoS y retain se conservan)",
+        "info": "",
+        "x": 400,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "rl_in",
+        "type": "mqtt in",
+        "z": "relay_tab",
+        "name": "Broker publico",
+        "topic": "datacenter_andinoSAC/sala_servidores/#",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "br_remoto",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 170,
+        "y": 140,
+        "wires": [
+            [
+                "rl_out",
+                "rl_dbg"
+            ]
+        ]
+    },
+    {
+        "id": "rl_out",
+        "type": "mqtt out",
+        "z": "relay_tab",
+        "name": "Publicar en Mosquitto local",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "br_local2",
+        "x": 470,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "rl_dbg",
+        "type": "debug",
+        "z": "relay_tab",
+        "name": "Mensajes reenviados",
+        "active": true,
+        "tosidebar": false,
+        "console": false,
+        "tostatus": true,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "counter",
+        "x": 470,
+        "y": 170,
+        "wires": []
+    },
+    {
+        "id": "c85d828a3cfcdb50",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-influxdb": "0.7.0"
+        }
+    }
+]

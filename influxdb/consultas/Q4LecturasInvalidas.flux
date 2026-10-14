@@ -1,0 +1,6 @@
+from(bucket: "sala_servidores")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "lecturas_invalidas" and r._field == "detalle")
+  |> keep(columns: ["_time", "motivo", "dispositivo", "_value"])
+  |> group()
+  |> sort(columns: ["_time"], desc: true)

@@ -1,0 +1,15 @@
+.env
+*.env
+!.env.example
+flows_cred.json
+*_cred.json
+.config.*.json
+node_modules/
+*.log
+*.bolt
+*.sqlite
+.influxdbv2/
+passwd
+secretos*.txt
+evidencias/*
+!evidencias/.gitkeep

@@ -1,0 +1,6 @@
+from(bucket: "sala_servidores")
+  |> range(start: -30m)
+  |> filter(fn: (r) => r._measurement == "lecturas_sala" and r._field == "seq")
+  |> filter(fn: (r) => r._value >= 120.0 and r._value <= 270.0)
+  |> group()
+  |> count()

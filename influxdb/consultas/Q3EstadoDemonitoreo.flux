@@ -1,0 +1,6 @@
+from(bucket: "sala_servidores")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "estado_monitoreo" and r._field == "estado_texto")
+  |> keep(columns: ["_time", "fuente", "_value"])
+  |> group()
+  |> sort(columns: ["_time"], desc: true)

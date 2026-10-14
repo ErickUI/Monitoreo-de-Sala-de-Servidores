@@ -1,0 +1,14 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://127.0.0.1:8086
+    jsonData:
+      version: Flux
+      organization: DataCenterAndino
+      defaultBucket: sala_servidores
+      timeInterval: 2s
+    secureJsonData:
+      token: $INFLUX_TOKEN_GRAFANA

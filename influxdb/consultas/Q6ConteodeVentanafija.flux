@@ -1,0 +1,5 @@
+from(bucket: "sala_servidores")
+  |> range(start: 2026-10-11T20:00:00Z, stop: 2026-10-11T20:10:00Z)
+  |> filter(fn: (r) => r._measurement == "lecturas_sala" and r._field == "temperatura")
+  |> group()
+  |> count()

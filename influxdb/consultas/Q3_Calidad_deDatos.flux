@@ -1,0 +1,6 @@
+from(bucket: "sala_servidores")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "calidad_datos" and r._field == "perdidos")
+  |> keep(columns: ["_time", "tipo", "_value"])
+  |> group()
+  |> sort(columns: ["_time"], desc: true)

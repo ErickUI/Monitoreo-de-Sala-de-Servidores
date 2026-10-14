@@ -1,0 +1,5 @@
+from(bucket: "sala_servidores")
+  |> range(start: -15m)
+  |> filter(fn: (r) => r._measurement == "lecturas_sala" and r._field == "latencia_ms")
+  |> group()
+  |> quantile(q: 0.5, method: "exact_mean")

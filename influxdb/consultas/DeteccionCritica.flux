@@ -1,0 +1,6 @@
+from(bucket: "sala_servidores")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "alertas" and r._field == "tiempo_deteccion_ms" and r.tipo == "temperatura_critica")
+  |> keep(columns: ["_time", "_value"])
+  |> group()
+  |> sort(columns: ["_time"], desc: true)
